@@ -8,6 +8,80 @@ OpenTelemetry Logs SDK
 
 The source files of these examples are available :scm_web:`here <docs/examples/logs/>`.
 
+Important Usage Notes
+---------------------
+
+**Root Logger Instrumentation**
+
+The OpenTelemetry ``LoggingHandler`` is attached to the **root logger**. This means:
+
+1. **Logger propagation must be enabled**: Child loggers must have ``propagate=True``
+   (which is the default) for their log messages to be captured by OpenTelemetry.
+   If you set ``propagate=False`` on a logger, its messages will not be exported.
+
+   .. code-block:: python
+
+       # This logger will have its logs exported (propagate=True is the default)
+       logger = logging.getLogger("myapp.module")
+
+       # This logger will NOT have its logs exported
+       non_exported_logger = logging.getLogger("private.module")
+       non_exported_logger.propagate = False
+
+2. **Root logger handlers must not be cleared**: Since the OpenTelemetry handler is
+   attached to the root logger, removing all handlers from the root logger will
+   disable OpenTelemetry log export.
+
+**Using with logging.config.dictConfig**
+
+If you configure logging using ``logging.config.dictConfig()``, be aware that it may
+clear existing handlers on the root logger, including the OpenTelemetry handler.
+To preserve the OpenTelemetry handler, save and restore the root logger's handlers:
+
+.. code-block:: python
+
+    import logging
+    import logging.config
+
+    # First, set up OpenTelemetry logging
+    from opentelemetry._logs import set_logger_provider
+    from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+    from opentelemetry.sdk._logs.export import BatchLogRecordProcessor, ConsoleLogExporter
+
+    logger_provider = LoggerProvider()
+    set_logger_provider(logger_provider)
+    logger_provider.add_log_record_processor(BatchLogRecordProcessor(ConsoleLogExporter()))
+    handler = LoggingHandler(logger_provider=logger_provider)
+    logging.getLogger().addHandler(handler)
+
+    # Save the root logger handlers before applying dictConfig
+    root_handlers = logging.root.handlers[:]
+
+    # Apply your logging configuration
+    logging_config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+            },
+        },
+        "root": {
+            "level": "INFO",
+            "handlers": ["console"],
+        },
+    }
+    logging.config.dictConfig(logging_config)
+
+    # Restore the OpenTelemetry handler if it was removed
+    for saved_handler in root_handlers:
+        if isinstance(saved_handler, LoggingHandler):
+            if saved_handler not in logging.root.handlers:
+                logging.root.addHandler(saved_handler)
+
+Basic Setup Example
+-------------------
+
 Start the Collector locally to see data being exported. Write the following file:
 
 .. code-block:: yaml

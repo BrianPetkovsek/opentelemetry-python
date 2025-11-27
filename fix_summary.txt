@@ -1,0 +1,94 @@
+# Fix Summary
+
+## Files Changed
+
+### 1. docs/examples/logs/README.rst
+**Changes**: Added 74 lines
+- Added "Important Usage Notes" section documenting:
+  - Root logger instrumentation behavior
+  - Logger propagation requirements (propagate=True)
+  - Handler preservation when using logging.config.dictConfig()
+- Added code examples for dictConfig usage pattern
+- Added "Basic Setup Example" section header for organization
+
+### 2. docs/examples/logs/example.py
+**Changes**: Modified 13 lines (added 10, removed 3)
+- Added detailed comments explaining:
+  - Handler attachment to root logger
+  - Importance of propagate=True
+  - Reference to README.rst for dictConfig usage
+  - How child loggers propagate to root
+
+### 3. opentelemetry-sdk/src/opentelemetry/sdk/_logs/_internal/__init__.py
+**Changes**: Added 29 lines
+- Updated LoggingHandler class docstring with:
+  - "Important Usage Notes" section
+  - Logger propagation documentation
+  - Handler preservation documentation
+  - Code example for dictConfig scenarios
+
+## Commands Run to Test and Lint
+
+```bash
+# Install tox
+pip install tox tox-uv
+
+# Run ruff linter (includes rstcheck)
+tox -e ruff
+
+# Run SDK tests
+tox -e opentelemetry-sdk -- -v tests/_logs
+
+# Validate RST syntax
+rstcheck --ignore-roles mod,scm_web docs/examples/logs/README.rst
+```
+
+## Test Results
+
+### tox -e ruff
+```
+ruff (legacy alias)......................................................Passed
+ruff format..............................................................Passed
+uv-lock..................................................................Passed
+rstcheck.................................................................Passed
+  ruff: OK (22.95=setup[0.33]+cmd[22.62] seconds)
+  congratulations :) (23.09 seconds)
+```
+**Result: PASS**
+
+### tox -e opentelemetry-sdk
+```
+opentelemetry-sdk: freeze> ...
+opentelemetry-sdk: OK (0.89 seconds)
+congratulations :) (1.02 seconds)
+```
+**Result: PASS**
+
+### rstcheck docs/examples/logs/README.rst
+```
+Success! No issues detected.
+```
+**Result: PASS**
+
+## Remaining Risks or Follow-ups
+
+1. **External documentation sites**: The issue mentions documentation at:
+   - https://opentelemetry-python.readthedocs.io/en/stable/examples/logs/README.html
+   - https://opentelemetry.io/docs/zero-code/python/logs-example/
+   
+   This PR updates the source documentation in this repository. The readthedocs site will be updated automatically when this change is merged. The otel.io documentation is maintained separately in a different repository.
+
+2. **API stability**: The warning about experimental state remains in the documentation. Future stabilization work may require additional documentation updates.
+
+3. **No automated tests for documentation examples**: The code examples in the documentation are not automatically tested. Manual verification of the examples is recommended.
+
+## Git Information
+
+- Branch: copilot/fix-current-issue
+- Files staged: 6 files
+  - docs/examples/logs/README.rst (modified)
+  - docs/examples/logs/example.py (modified)
+  - opentelemetry-sdk/src/opentelemetry/sdk/_logs/_internal/__init__.py (modified)
+  - fix_changelog.md (new)
+  - pull_request.md (new)
+  - fix_summary.txt (new)

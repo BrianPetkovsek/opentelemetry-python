@@ -36,12 +36,19 @@ handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
 # Set the root logger level to NOTSET to ensure all messages are captured
 logging.getLogger().setLevel(logging.NOTSET)
 
-# Attach OTLP handler to root logger
+# Attach OTLP handler to root logger.
+# IMPORTANT: The handler is attached to the root logger, which means:
+# 1. Child loggers must have propagate=True (the default) for their logs
+#    to be captured by OpenTelemetry.
+# 2. If using logging.config.dictConfig(), save and restore this handler
+#    as dictConfig may clear existing handlers. See README.rst for details.
 logging.getLogger().addHandler(handler)
 
-# Create different namespaced loggers
+# Create different namespaced loggers.
+# These loggers propagate to the root logger by default (propagate=True),
+# so their logs will be captured by the OpenTelemetry handler.
 # It is recommended to not use the root logger with OTLP handler
-# so telemetry is collected only for the application
+# so telemetry is collected only for the application.
 logger1 = logging.getLogger("myapp.area1")
 logger2 = logging.getLogger("myapp.area2")
 
