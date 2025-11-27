@@ -439,6 +439,13 @@ class PeriodicExportingMetricReader(MetricReader):
 
     The configured exporter's :py:meth:`~MetricExporter.export` method will not be called
     concurrently.
+
+    Fork Safety:
+        This reader is fork-safe on platforms that support ``os.register_at_fork``
+        (Unix-like systems). When a process forks, the reader automatically
+        reinitializes its background worker thread in the child process. This allows
+        it to work correctly with fork-based application servers like Gunicorn, uWSGI,
+        and Celery with multi/fork mode without additional configuration.
     """
 
     def __init__(

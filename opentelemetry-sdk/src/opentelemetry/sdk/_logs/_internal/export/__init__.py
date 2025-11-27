@@ -188,6 +188,13 @@ class BatchLogRecordProcessor(LogRecordProcessor):
     - :envvar:`OTEL_BLRP_MAX_EXPORT_BATCH_SIZE`
     - :envvar:`OTEL_BLRP_EXPORT_TIMEOUT`
 
+    Fork Safety:
+        This processor is fork-safe on platforms that support ``os.register_at_fork``
+        (Unix-like systems). When a process forks, the processor automatically
+        reinitializes its background worker thread in the child process. This allows
+        it to work correctly with fork-based application servers like Gunicorn, uWSGI,
+        and Celery with multi/fork mode without additional configuration.
+
     All the logic for emitting logs, shutting down etc. resides in the BatchProcessor class.
     """
 

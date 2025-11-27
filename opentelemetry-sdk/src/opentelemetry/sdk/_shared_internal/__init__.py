@@ -82,9 +82,17 @@ class Exporter(Protocol[Telemetry]):
 
 
 class BatchProcessor(Generic[Telemetry]):
-    """This class can be used with exporter's that implement the above
-    Exporter interface to buffer and send telemetry in batch through
-     the exporter."""
+    """A batch processor that buffers and exports telemetry data in batches.
+
+    This class can be used with exporters that implement the ``Exporter``
+    interface to buffer and send telemetry in batch through the exporter.
+
+    The processor is fork-safe on platforms that support ``os.register_at_fork``
+    (Unix-like systems). When a process forks, the processor automatically
+    reinitializes its worker thread and clears its queue in the child process.
+    This allows OpenTelemetry to work correctly with fork-based application
+    servers like Gunicorn, uWSGI, and Celery with multi/fork mode.
+    """
 
     def __init__(
         self,
@@ -140,6 +148,15 @@ class BatchProcessor(Generic[Telemetry]):
         return False
 
     def _at_fork_reinit(self):
+        """Reinitialize the processor after a fork.
+
+        This method is called automatically via ``os.register_at_fork`` after
+        a fork occurs. It reinitializes the worker thread and clears the queue
+        in the child process to ensure proper operation.
+
+        The queue is cleared because any telemetry data from the parent process
+        should be exported by the parent, not the child.
+        """
         self._export_lock = threading.Lock()
         self._worker_awaken = threading.Event()
         self._queue.clear()
