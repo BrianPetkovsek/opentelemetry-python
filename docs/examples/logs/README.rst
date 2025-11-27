@@ -75,9 +75,8 @@ To preserve the OpenTelemetry handler, save and restore the root logger's handle
 
     # Restore the OpenTelemetry handler if it was removed
     for saved_handler in root_handlers:
-        if isinstance(saved_handler, LoggingHandler):
-            if saved_handler not in logging.root.handlers:
-                logging.root.addHandler(saved_handler)
+        if isinstance(saved_handler, LoggingHandler) and saved_handler not in logging.root.handlers:
+            logging.root.addHandler(saved_handler)
 
 Basic Setup Example
 -------------------

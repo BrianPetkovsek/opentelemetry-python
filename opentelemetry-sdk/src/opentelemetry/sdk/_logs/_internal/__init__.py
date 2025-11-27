@@ -512,9 +512,9 @@ class LoggingHandler(logging.Handler):
                logging.config.dictConfig(your_config)
 
                # Restore OpenTelemetry handler if removed
-               for h in root_handlers:
-                   if isinstance(h, LoggingHandler) and h not in logging.root.handlers:
-                       logging.root.addHandler(h)
+               for handler in root_handlers:
+                   if isinstance(handler, LoggingHandler) and handler not in logging.root.handlers:
+                       logging.root.addHandler(handler)
     """
 
     def __init__(
