@@ -1,0 +1,102 @@
+# Fix Summary
+
+## Files Changed
+
+### Documentation
+- **docs/examples/fork-process-model/README.rst** (+99/-10 lines)
+  - Rewrote introduction to explain built-in fork safety support
+  - Added "Automatic Fork Safety (Recommended)" section with code example
+  - Added "Celery with Multi/Fork Mode" section with code example
+  - Reorganized Gunicorn and uWSGI examples under "Manual Post-Fork Hooks (Advanced)"
+  - Added notes about when manual hooks are still needed
+
+### Source Code Docstrings
+- **opentelemetry-sdk/src/opentelemetry/sdk/_shared_internal/__init__.py** (+23 lines)
+  - Updated `BatchProcessor` class docstring to document fork safety
+  - Added docstring to `_at_fork_reinit` method
+
+- **opentelemetry-sdk/src/opentelemetry/sdk/trace/export/__init__.py** (+7 lines)
+  - Added "Fork Safety" section to `BatchSpanProcessor` docstring
+
+- **opentelemetry-sdk/src/opentelemetry/sdk/_logs/_internal/export/__init__.py** (+7 lines)
+  - Added "Fork Safety" section to `BatchLogRecordProcessor` docstring
+
+- **opentelemetry-sdk/src/opentelemetry/sdk/metrics/_internal/export/__init__.py** (+7 lines)
+  - Added "Fork Safety" section to `PeriodicExportingMetricReader` docstring
+
+### New Files Created
+- **fix_changelog.md** - Detailed changelog explaining the fix
+- **pull_request.md** - Pull request description based on template
+- **fix_summary.txt** - This file
+
+## Commands Ran to Test and Lint
+
+### Testing
+```bash
+# Run batch processor tests including fork tests
+python -m pytest opentelemetry-sdk/tests/shared_internal/test_batch_processor.py -v
+```
+
+### Linting
+```bash
+# Check RST documentation syntax
+rstcheck docs/examples/fork-process-model/README.rst
+
+# Run ruff linter on modified Python files
+ruff check opentelemetry-sdk/src/opentelemetry/sdk/_shared_internal/__init__.py \
+           opentelemetry-sdk/src/opentelemetry/sdk/trace/export/__init__.py \
+           opentelemetry-sdk/src/opentelemetry/sdk/_logs/_internal/export/__init__.py \
+           opentelemetry-sdk/src/opentelemetry/sdk/metrics/_internal/export/__init__.py
+```
+
+## Test Results
+
+### pytest output (15 passed, 2 warnings):
+```
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.1, pluggy-1.6.0
+plugins: cov-7.0.0
+collected 15 items
+
+test_batch_processor.py::TestBatchProcessor::test_telemetry_exported_once_batch_size_reached[BatchLogRecordProcessor-telemetry0] PASSED
+test_batch_processor.py::TestBatchProcessor::test_telemetry_exported_once_batch_size_reached[BatchSpanProcessor-telemetry1] PASSED
+test_batch_processor.py::TestBatchProcessor::test_telemetry_exported_once_schedule_delay_reached[BatchLogRecordProcessor-telemetry0] PASSED
+test_batch_processor.py::TestBatchProcessor::test_telemetry_exported_once_schedule_delay_reached[BatchSpanProcessor-telemetry1] PASSED
+test_batch_processor.py::TestBatchProcessor::test_telemetry_flushed_before_shutdown_and_dropped_after_shutdown[BatchLogRecordProcessor-telemetry0] PASSED
+test_batch_processor.py::TestBatchProcessor::test_telemetry_flushed_before_shutdown_and_dropped_after_shutdown[BatchSpanProcessor-telemetry1] PASSED
+test_batch_processor.py::TestBatchProcessor::test_force_flush_flushes_telemetry[BatchLogRecordProcessor-telemetry0] PASSED
+test_batch_processor.py::TestBatchProcessor::test_force_flush_flushes_telemetry[BatchSpanProcessor-telemetry1] PASSED
+test_batch_processor.py::TestBatchProcessor::test_batch_telemetry_record_processor_fork[BatchLogRecordProcessor-telemetry0] PASSED
+test_batch_processor.py::TestBatchProcessor::test_batch_telemetry_record_processor_fork[BatchSpanProcessor-telemetry1] PASSED
+test_batch_processor.py::TestBatchProcessor::test_record_processor_is_garbage_collected[BatchLogRecordProcessor-telemetry0] PASSED
+test_batch_processor.py::TestBatchProcessor::test_record_processor_is_garbage_collected[BatchSpanProcessor-telemetry1] PASSED
+test_batch_processor.py::TestBatchProcessor::test_shutdown_allows_1_export_to_finish[BatchLogRecordProcessor-telemetry0] PASSED
+test_batch_processor.py::TestBatchProcessor::test_shutdown_allows_1_export_to_finish[BatchSpanProcessor-telemetry1] PASSED
+test_batch_processor.py::TestCommonFuncs::test_duplicate_logs_filter_works PASSED
+
+======================== 15 passed, 2 warnings in 6.93s ========================
+```
+
+### RST check output:
+```
+Success! No issues detected.
+```
+
+### Ruff linter output:
+```
+All checks passed!
+```
+
+## Remaining Risks or Follow-ups
+
+1. **No new tests added**: The existing `test_batch_telemetry_record_processor_fork` test validates the fork safety functionality, so no new tests were required. However, a more comprehensive integration test with actual Celery workers could be valuable in the future.
+
+2. **Platform-specific behavior**: The documentation notes that fork safety depends on `os.register_at_fork`, which is only available on Unix-like systems. Windows users would need different approaches (though Windows typically uses `spawn` instead of `fork`).
+
+3. **Deprecation warning in tests**: The fork test shows a Python deprecation warning about forking in multi-threaded processes. This is a known Python issue and doesn't affect functionality.
+
+4. **Contrib repo**: This documentation change might benefit from corresponding updates in the opentelemetry-python-contrib repository, specifically for the Celery instrumentation documentation.
+
+## Summary
+
+This change corrects outdated documentation that incorrectly stated `BatchSpanProcessor` is not fork-safe. The SDK has had fork safety support via `os.register_at_fork` for some time, and this documentation update accurately reflects the current implementation. Users of Gunicorn, uWSGI, and Celery multi can now rely on automatic fork safety without needing complex workarounds.
