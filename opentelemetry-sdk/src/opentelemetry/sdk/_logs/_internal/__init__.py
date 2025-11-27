@@ -486,6 +486,35 @@ class LoggingHandler(logging.Handler):
     """A handler class which writes logging records, in OTLP format, to
     a network destination or file. Supports signals from the `logging` module.
     https://docs.python.org/3/library/logging.html
+
+    Important Usage Notes:
+        This handler is typically attached to the **root logger**. This has
+        important implications:
+
+        1. **Logger propagation**: Child loggers must have ``propagate=True``
+           (which is the default) for their log messages to be captured.
+           If you set ``propagate=False`` on a logger, its messages will not
+           be exported to OpenTelemetry.
+
+        2. **Handler preservation**: Since this handler is attached to the root
+           logger, removing all handlers from the root logger will disable
+           OpenTelemetry log export.
+
+        3. **Using with logging.config.dictConfig()**: If you configure logging
+           using ``dictConfig()``, be aware that it may clear existing handlers
+           on the root logger, including this handler. To preserve it, save and
+           restore the root logger's handlers::
+
+               # Save handlers before dictConfig
+               root_handlers = logging.root.handlers[:]
+
+               # Apply your logging configuration
+               logging.config.dictConfig(your_config)
+
+               # Restore OpenTelemetry handler if removed
+               for handler in root_handlers:
+                   if isinstance(handler, LoggingHandler) and handler not in logging.root.handlers:
+                       logging.root.addHandler(handler)
     """
 
     def __init__(
